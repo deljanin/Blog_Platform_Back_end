@@ -1,15 +1,28 @@
-const { validationResult, check } = require('express-validator');
+const { check } = require('express-validator');
 const badWords = require('bad-words');
 
 const customFilter = new badWords();
 
+const validateEmail = check('email')
+  .exists()
+  .withMessage('Email undefined')
+  .isEmail()
+  .withMessage('Invalid email format');
+
+// Custom validation function to check for profanity and hate speech
+const checkComment = check('content')
+  .exists()
+  .withMessage('Comment text undefined')
+  .custom((value) => {
+    if (customFilter.isProfane(value)) {
+      return false;
+    } else return true;
+  })
+  .withMessage('Profanity is not allowed');
+
 // Validation middleware
 const validateRegistrationInput = [
-  check('email')
-    .exists()
-    .withMessage('Email undefined')
-    .isEmail()
-    .withMessage('Invalid email format'),
+  validateEmail,
   check('password')
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters long')
@@ -32,4 +45,6 @@ const validateRegistrationInput = [
 
 module.exports = {
   validateRegistrationInput,
+  validateEmail,
+  checkComment,
 };
